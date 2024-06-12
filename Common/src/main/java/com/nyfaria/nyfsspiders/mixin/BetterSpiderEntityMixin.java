@@ -1,5 +1,6 @@
 package com.nyfaria.nyfsspiders.mixin;
 
+import com.nyfaria.nyfsspiders.Config;
 import com.nyfaria.nyfsspiders.common.ModTags;
 import com.nyfaria.nyfsspiders.common.entity.goal.BetterLeapAtTargetGoal;
 import com.nyfaria.nyfsspiders.common.entity.mob.IClimberEntity;
@@ -50,7 +51,7 @@ public abstract class BetterSpiderEntityMixin extends Monster implements IClimbe
 
 	@Inject(method = "defineSynchedData", at = @At("HEAD"))
 	private void onRegisterData(CallbackInfo ci) {
-		this.pathFinderDebugPreview = Services.PLATFORM.getPathFinderDebugPreview();
+		this.pathFinderDebugPreview = Config.PATH_FINDER_DEBUG_PREVIEW.get();
 	}
 
 	@Redirect(method = "registerGoals()V", at = @At(

@@ -1,7 +1,5 @@
 package com.nyfaria.nyfsspiders.platform.services;
 
-import java.nio.file.Path;
-
 public interface IPlatformHelper {
 
     /**
@@ -35,6 +33,4 @@ public interface IPlatformHelper {
 
         return isDevelopmentEnvironment() ? "development" : "production";
     }
-    boolean getPreventClimbingInRain();
-    boolean getPathFinderDebugPreview();
 }

@@ -724,7 +724,7 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 
 		this.yHeadRot = Mth.wrapDegrees(this.yHeadRot + yawDelta);
 		this.yHeadRotO = this.wrapAngleInRange(this.yHeadRotO/* + yawDelta*/, this.yHeadRot);
-		this.lyHeadRot = Mth.wrapDegrees(this.lyHeadRot + yawDelta);
+		this.lerpYHeadRot = Mth.wrapDegrees(this.lerpYHeadRot + yawDelta);
 
 		this.xRot = Mth.wrapDegrees(this.xRot + pitchDelta);
 		this.xRotO = this.wrapAngleInRange(this.xRotO/* + pitchDelta*/, this.xRot);
@@ -781,18 +781,18 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 	}
 
 	@Override
-	public float getTargetYaw(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport) {
+	public float getTargetYaw(double x, double y, double z, float yaw, float pitch, int posRotationIncrements) {
 		return (float) this.lerpYRot;
 	}
 
 	@Override
-	public float getTargetPitch(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport) {
+	public float getTargetPitch(double x, double y, double z, float yaw, float pitch, int posRotationIncrements) {
 		return (float) this.lerpXRot;
 	}
 
 	@Override
 	public float getTargetHeadYaw(float yaw, int rotationIncrements) {
-		return (float) this.lyHeadRot;
+		return (float) this.lerpYHeadRot;
 	}
 
 	@Override
@@ -811,7 +811,7 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 
 			Pair<Float, Float> rotations = this.getOrientation().getLocalRotation(look);
 
-			this.lyHeadRot = rotations.getLeft();
+			this.lerpYHeadRot = rotations.getLeft();
 			this.lerpHeadSteps = 3;
 		}
 	}
