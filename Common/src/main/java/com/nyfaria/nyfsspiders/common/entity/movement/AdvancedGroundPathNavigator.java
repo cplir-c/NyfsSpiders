@@ -9,7 +9,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.pathfinder.PathFinder;
@@ -160,10 +160,10 @@ public class AdvancedGroundPathNavigator<T extends Mob & IClimberEntity> extends
 					BlockPos pos = CommonClass.blockPos(checkPos.x + (axis != 0 ? xzo : 0), checkPos.y + (axis != 1 ? yo : 0), checkPos.z + (axis != 2 ? xzo : 0));
 
 					BlockState state = this.advancedPathFindingEntity.level().getBlockState(pos);
+					//todo: might be wrong
+					PathType nodeType = state.isPathfindable(PathComputationType.LAND) ? PathType.OPEN : PathType.BLOCKED;
 
-					BlockPathTypes nodeType = state.isPathfindable(this.advancedPathFindingEntity.level(), pos, PathComputationType.LAND) ? BlockPathTypes.OPEN : BlockPathTypes.BLOCKED;
-
-					if(nodeType == BlockPathTypes.BLOCKED) {
+					if(nodeType == PathType.BLOCKED) {
 						VoxelShape collisionShape = state.getShape(this.advancedPathFindingEntity.level(), pos, CollisionContext.of(this.advancedPathFindingEntity)).move(pos.getX(), pos.getY(), pos.getZ());
 
 						//TODO Use ILineConsumer

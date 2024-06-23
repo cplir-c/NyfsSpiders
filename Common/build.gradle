@@ -20,8 +20,13 @@ repositories {
 }
 dependencies {
     minecraft "net.minecraft:joined:${minecraft_version}"
-    compileOnly group:'org.spongepowered', name:'mixin', version:'0.8.5'
+    compileOnly group: 'org.spongepowered', name: 'mixin', version: '0.8.5'
     compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${project.forge_config_api_port_version}"
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
+    compileOnly("io.github.llamalad7:mixinextras-common:0.3.6")
+    implementation "mysticdrew:common-networking-common:${common_network_version}-${minecraft_version}"
+
 }
 
 configurations {

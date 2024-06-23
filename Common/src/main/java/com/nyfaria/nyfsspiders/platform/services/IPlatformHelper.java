@@ -1,5 +1,9 @@
 package com.nyfaria.nyfsspiders.platform.services;
 
+import com.nyfaria.nyfsspiders.common.SpiderData;
+import com.nyfaria.nyfsspiders.mixin.ClimberEntityMixin;
+import net.minecraft.world.entity.monster.Spider;
+
 public interface IPlatformHelper {
 
     /**
@@ -33,4 +37,6 @@ public interface IPlatformHelper {
 
         return isDevelopmentEnvironment() ? "development" : "production";
     }
+    SpiderData getSpiderData(Spider spider);
+    void setSpiderData(Spider spider, SpiderData data);
 }

@@ -1,6 +1,6 @@
 plugins {
     id 'multiloader-loader'
-    id 'net.neoforged.gradle.userdev' version '7.0.139'
+    id 'net.neoforged.moddev' version '0.1.107'
     id "me.modmuss50.mod-publish-plugin" version "0.5.1"
 }
 
@@ -8,34 +8,43 @@ plugins {
 // Automatically enable neoforge AccessTransformers if the file exists
 // This location is hardcoded in FML and can not be changed.
 // https://github.com/neoforged/FancyModLoader/blob/a952595eaaddd571fbc53f43847680b00894e0c1/loader/src/main/java/net/neoforged/fml/loading/moddiscovery/ModFile.java#L118
-def at = file('src/main/resources/META-INF/accesstransformer.cfg')
-minecraft.accessTransformers.file at
 
-runs {
-    configureEach {
-        modSource project.sourceSets.main
-    }
-    client {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-    }
-    server {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        programArgument '--nogui'
-    }
 
-    gameTestServer {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+neoForge {
+    version = "${neoforge_version}"
+    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers = ["src/main/resources/META-INF/accesstransformer.cfg"]
     }
-
-    data {
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', project(":common").file('src/generated/resources/').getAbsolutePath(), '--existing', project(":common").file('src/main/resources/').getAbsolutePath()
+    runs {
+        configureEach {
+//            modSource project.sourceSets.main
+        }
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        server {
+            server()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArgument '--nogui'
+        }
+        data {
+            data()
+//            programArguments.addAll '--mod', project.mod_id, '--all', '--output', project(":common").file('src/generated/resources/').getAbsolutePath(), '--existing', project(":common").file('src/main/resources/').getAbsolutePath()
+        }
+    }
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
     }
 }
 
 sourceSets.main.resources { srcDir project(":common").file('src/generated/resources').getAbsolutePath() }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${neoforge_version}"
+    implementation "mysticdrew:common-networking-neoforge:${common_network_version}-${minecraft_version}"
 }
 
 publishMods {
@@ -68,6 +77,6 @@ publishMods {
         webhookUrl = spider_news
         username = "Spider News"
         avatarUrl = "https://media.forgecdn.net/avatars/618/872/638005062440412823.png"
-        content = changelog.map { "@<> # A new version Nyf's Spiders has been released! \n" + it}
+        content = changelog.map { "# Nyf's Spiders ${version} has been released for Minecraft ${minecraft_version}! \n (Pending Approval of Course)" + it}
     }
 }

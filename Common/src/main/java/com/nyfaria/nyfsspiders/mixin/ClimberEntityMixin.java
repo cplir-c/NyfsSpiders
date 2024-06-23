@@ -1,8 +1,10 @@
 package com.nyfaria.nyfsspiders.mixin;
 
 import com.google.common.collect.ImmutableList;
+import com.nyfaria.nyfsspiders.Constants;
 import com.nyfaria.nyfsspiders.common.CollisionSmoothingUtil;
 import com.nyfaria.nyfsspiders.common.Matrix4f;
+import com.nyfaria.nyfsspiders.common.SpiderData;
 import com.nyfaria.nyfsspiders.common.entity.mob.IClimberEntity;
 import com.nyfaria.nyfsspiders.common.entity.mob.IEntityMovementHook;
 import com.nyfaria.nyfsspiders.common.entity.mob.IEntityReadWriteHook;
@@ -20,6 +22,7 @@ import com.nyfaria.nyfsspiders.common.entity.movement.ClimberJumpController;
 import com.nyfaria.nyfsspiders.common.entity.movement.ClimberLookController;
 import com.nyfaria.nyfsspiders.common.entity.movement.ClimberMoveController;
 import com.nyfaria.nyfsspiders.common.entity.movement.DirectionalPathPoint;
+import com.nyfaria.nyfsspiders.platform.Services;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,6 +31,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
@@ -59,6 +63,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -74,38 +79,10 @@ import java.util.UUID;
 @Mixin(value = { Spider.class })
 public abstract class ClimberEntityMixin extends PathfinderMob implements IClimberEntity, IMobEntityLivingTickHook, ILivingEntityLookAtHook, IMobEntityTickHook, ILivingEntityRotationHook, ILivingEntityDataManagerHook, ILivingEntityTravelHook, IEntityMovementHook, IEntityReadWriteHook, ILivingEntityJumpHook {
 
-	//Copy from LivingEntity
-	private static final UUID SLOW_FALLING_ID = UUID.fromString("A5B6CF2A-2F7C-31EF-9022-7C3E7D5E6ABA");
-	private static final AttributeModifier SLOW_FALLING = new AttributeModifier(SLOW_FALLING_ID, "Slow falling acceleration reduction", -0.07, AttributeModifier.Operation.ADDITION);
+	private static final AttributeModifier SLOW_FALLING = new AttributeModifier(ResourceLocation.fromNamespaceAndPath(Constants.MODID, "reduce_slow_fall"), -0.07, AttributeModifier.Operation.ADD_VALUE);
 
-	private static final EntityDataAccessor<Float> MOVEMENT_TARGET_X;
-	private static final EntityDataAccessor<Float> MOVEMENT_TARGET_Y;
-	private static final EntityDataAccessor<Float> MOVEMENT_TARGET_Z;
-	private static final ImmutableList<EntityDataAccessor<Optional<BlockPos>>> PATHING_TARGETS;
-	private static final ImmutableList<EntityDataAccessor<Direction>> PATHING_SIDES;
-
-	private static final EntityDataAccessor<Rotations> ROTATION_BODY;
-	private static final EntityDataAccessor<Rotations> ROTATION_HEAD;
-
-	static {
-		@SuppressWarnings("unchecked")
-		Class<Entity> cls = (Class<Entity>) MethodHandles.lookup().lookupClass();
-
-		MOVEMENT_TARGET_X = SynchedEntityData.defineId(cls, EntityDataSerializers.FLOAT);
-		MOVEMENT_TARGET_Y = SynchedEntityData.defineId(cls, EntityDataSerializers.FLOAT);
-		MOVEMENT_TARGET_Z = SynchedEntityData.defineId(cls, EntityDataSerializers.FLOAT);
-
-		ImmutableList.Builder<EntityDataAccessor<Optional<BlockPos>>> pathingTargets = ImmutableList.builder();
-		ImmutableList.Builder<EntityDataAccessor<Direction>> pathingSides = ImmutableList.builder();
-		for(int i = 0; i < 8; i++) {
-			pathingTargets.add(SynchedEntityData.defineId(cls, EntityDataSerializers.OPTIONAL_BLOCK_POS));
-			pathingSides.add(SynchedEntityData.defineId(cls, EntityDataSerializers.DIRECTION));
-		}
-		PATHING_TARGETS = pathingTargets.build();
-		PATHING_SIDES = pathingSides.build();
-
-		ROTATION_BODY = SynchedEntityData.defineId(cls, EntityDataSerializers.ROTATIONS);
-		ROTATION_HEAD = SynchedEntityData.defineId(cls, EntityDataSerializers.ROTATIONS);
+	public SpiderData getData(){
+		return Services.PLATFORM.getSpiderData((Spider)(Object)this);
 	}
 
 	private double prevAttachmentOffsetX, prevAttachmentOffsetY, prevAttachmentOffsetZ;
@@ -118,6 +95,27 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 	private float orientationYawDelta;
 
 	private double lastAttachmentOffsetX, lastAttachmentOffsetY, lastAttachmentOffsetZ;
+
+	@Override
+	public void setLerpYRot(Float left) {
+		this.lerpYRot = (double)left;
+	}
+
+	@Override
+	public void setLerpXRot(Float right) {
+		this.lerpXRot = (double)right;
+	}
+
+	@Override
+	public void setLerpYHeadRot(Float left) {
+		this.lerpYHeadRot = (double)left;
+	}
+
+	@Override
+	public void setLerpHeadSteps(int i) {
+		this.lerpHeadSteps = i;
+	}
+
 	private Vec3 lastAttachmentOrientationNormal = new Vec3(0, 1, 0);
 
 	private int attachedTicks = 5;
@@ -151,7 +149,7 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 
 	@Inject(method = "<init>*", at = @At("RETURN"))
 	private void onConstructed(CallbackInfo ci) {
-		this.setMaxUpStep(0.1f);
+		this.getAttribute(Attributes.STEP_HEIGHT).setBaseValue(0.1);
 		this.orientation = this.calculateOrientation(1);
 		this.groundDirection = this.getGroundDirection();
 		this.moveControl = new ClimberMoveController<>(this);
@@ -166,30 +164,8 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 		ci.setReturnValue(navigate);
 	}
 
-	@Inject(method = "defineSynchedData", at = @At("RETURN"))
-	public void onDefineSynchedData(CallbackInfo ci){
-		onRegisterData();
-	}
 
-	public void onRegisterData() {
-		if(this.shouldTrackPathingTargets()) {
-			this.entityData.define(MOVEMENT_TARGET_X, 0.0f);
-			this.entityData.define(MOVEMENT_TARGET_Y, 0.0f);
-			this.entityData.define(MOVEMENT_TARGET_Z, 0.0f);
 
-			for(EntityDataAccessor<Optional<BlockPos>> pathingTarget : PATHING_TARGETS) {
-				this.entityData.define(pathingTarget, Optional.empty());
-			}
-
-			for(EntityDataAccessor<Direction> pathingSide : PATHING_SIDES) {
-				this.entityData.define(pathingSide, Direction.DOWN);
-			}
-		}
-
-		this.entityData.define(ROTATION_BODY, new Rotations(0, 0, 0));
-
-		this.entityData.define(ROTATION_HEAD, new Rotations(0, 0, 0));
-	}
 
 	@Override
 	public void onWrite(CompoundTag nbt) {
@@ -450,10 +426,10 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 				Orientation orientation = this.getOrientation();
 
 				Vec3 look = orientation.getGlobal(this.getYRot(), this.getXRot());
-				this.entityData.set(ROTATION_BODY, new Rotations((float) look.x, (float) look.y, (float) look.z));
+				getData().setRotationBody(new Vector3f((float) look.x, (float) look.y, (float) look.z));
 
 				look = orientation.getGlobal(this.yHeadRot, 0.0f);
-				this.entityData.set(ROTATION_HEAD, new Rotations((float) look.x, (float) look.y, (float) look.z));
+				getData().setRotationHead(new Vector3f((float) look.x, (float) look.y, (float) look.z));
 
 				if(this.shouldTrackPathingTargets()) {
 					if(this.xxa != 0) {
@@ -462,51 +438,51 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 
 						Vec3 offset = forwardVector.scale(this.zza).add(strafeVector.scale(this.xxa)).normalize();
 
-						this.entityData.set(MOVEMENT_TARGET_X, (float) (this.getX() + offset.x));
-						this.entityData.set(MOVEMENT_TARGET_Y, (float) (this.getY() + this.getBbHeight() * 0.5f + offset.y));
-						this.entityData.set(MOVEMENT_TARGET_Z, (float) (this.getZ() + offset.z));
+						getData().setMovementTargetX((float) (this.getX() + offset.x));
+						getData().setMovementTargetY((float) (this.getY() + this.getBbHeight() * 0.5f + offset.y));
+						getData().setMovementTargetZ((float) (this.getZ() + offset.z));
 					} else {
-						this.entityData.set(MOVEMENT_TARGET_X, (float) this.getMoveControl().getWantedX());
-						this.entityData.set(MOVEMENT_TARGET_Y, (float) this.getMoveControl().getWantedY());
-						this.entityData.set(MOVEMENT_TARGET_Z, (float) this.getMoveControl().getWantedZ());
+						getData().setMovementTargetX((float) this.getMoveControl().getWantedX());
+						getData().setMovementTargetY((float) this.getMoveControl().getWantedY());
+						getData().setMovementTargetZ((float) this.getMoveControl().getWantedZ());
 					}
 
 					Path path = this.getNavigation().getPath();
 					if(path != null) {
 						int i = 0;
 
-						for(EntityDataAccessor<Optional<BlockPos>> pathingTarget : PATHING_TARGETS) {
-							EntityDataAccessor<Direction> pathingSide = PATHING_SIDES.get(i);
+						for(Optional<BlockPos> pathingTarget : getData().getPathingTargets()) {
+							Direction pathingSide = getData().getPathingSides().get(i);
 
 							if(path.getNextNodeIndex() + i < path.getNodeCount()) {
 								Node point = path.getNode(path.getNextNodeIndex() + i);
 
-								this.entityData.set(pathingTarget, Optional.of(new BlockPos(point.x, point.y, point.z)));
+								getData().setPathingTarget(i, new BlockPos(point.x, point.y, point.z));
 
 								if(point instanceof DirectionalPathPoint) {
 									Direction dir = ((DirectionalPathPoint) point).getPathSide();
 
 									if(dir != null) {
-										this.entityData.set(pathingSide, dir);
+										getData().setPathingSide(i, dir);
 									} else {
-										this.entityData.set(pathingSide, Direction.DOWN);
+										getData().setPathingSide(i, Direction.DOWN);
 									}
 								}
 
 							} else {
-								this.entityData.set(pathingTarget, Optional.empty());
-								this.entityData.set(pathingSide, Direction.DOWN);
+								this.getData().setPathingTarget(i, null);
+								getData().setPathingSide(i, Direction.DOWN);
 							}
 
 							i++;
 						}
 					} else {
-						for(EntityDataAccessor<Optional<BlockPos>> pathingTarget : PATHING_TARGETS) {
-							this.entityData.set(pathingTarget, Optional.empty());
+						for(int i = 0; i< getData().getPathingTargets().size(); i++) {
+							this.getData().setPathingTarget(i, null);
 						}
 
-						for(EntityDataAccessor<Direction> pathingSide : PATHING_SIDES) {
-							this.entityData.set(pathingSide, Direction.DOWN);
+						for(int i = 0; i< getData().getPathingSides().size(); i++) {
+							this.getData().setPathingSide(i, Direction.DOWN);
 						}
 					}
 				}
@@ -528,7 +504,7 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 	@Nullable
 	public Vec3 getTrackedMovementTarget() {
 		if(this.shouldTrackPathingTargets()) {
-			return new Vec3(this.entityData.get(MOVEMENT_TARGET_X), this.entityData.get(MOVEMENT_TARGET_Y), this.entityData.get(MOVEMENT_TARGET_Z));
+			return new Vec3(getData().getMovementTargetX(), getData().getMovementTargetY(), getData().getMovementTargetZ());
 		}
 
 		return null;
@@ -538,14 +514,14 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 	@Nullable
 	public List<PathingTarget> getTrackedPathingTargets() {
 		if(this.shouldTrackPathingTargets()) {
-			List<PathingTarget> pathingTargets = new ArrayList<>(PATHING_TARGETS.size());
+			List<PathingTarget> pathingTargets = new ArrayList<>(getData().getPathingTargets().size());
 
 			int i = 0;
-			for(EntityDataAccessor<Optional<BlockPos>> key : PATHING_TARGETS) {
-				BlockPos pos = this.entityData.get(key).orElse(null);
+			for(Optional<BlockPos> key : getData().getPathingTargets()) {
+				BlockPos pos = key.orElse(null);
 
 				if(pos != null) {
-					pathingTargets.add(new PathingTarget(pos, this.entityData.get(PATHING_SIDES.get(i))));
+					pathingTargets.add(new PathingTarget(pos, getData().getPathingSides().get(i)));
 				}
 
 				i++;
@@ -797,26 +773,26 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 
 	@Override
 	public void onNotifyDataManagerChange(EntityDataAccessor<?> key) {
-		if(ROTATION_BODY.equals(key)) {
-			Rotations rotation = this.entityData.get(ROTATION_BODY);
-			Vec3 look = new Vec3(rotation.getX(), rotation.getY(), rotation.getZ());
-
-			Pair<Float, Float> rotations = this.getOrientation().getLocalRotation(look);
-
-			this.lerpYRot = rotations.getLeft();
-			this.lerpXRot = rotations.getRight();
-		} else if(ROTATION_HEAD.equals(key)) {
-			Rotations rotation = this.entityData.get(ROTATION_HEAD);
-			Vec3 look = new Vec3(rotation.getX(), rotation.getY(), rotation.getZ());
-
-			Pair<Float, Float> rotations = this.getOrientation().getLocalRotation(look);
-
-			this.lerpYHeadRot = rotations.getLeft();
-			this.lerpHeadSteps = 3;
-		}
+//		if(ROTATION_BODY.equals(key)) {
+//			Vector3f rotation = getData().getRotationBody();
+//			Vec3 look = new Vec3(rotation.x(), rotation.y(), rotation.z());
+//
+//			Pair<Float, Float> rotations = this.getOrientation().getLocalRotation(look);
+//
+//			this.lerpYRot = rotations.getLeft();
+//			this.lerpXRot = rotations.getRight();
+//		} else if(ROTATION_HEAD.equals(key)) {
+//			Vector3f rotation = getData().getRotationHead();
+//			Vec3 look = new Vec3(rotation.x(), rotation.y(), rotation.z());
+//
+//			Pair<Float, Float> rotations = this.getOrientation().getLocalRotation(look);
+//
+//			this.lerpYHeadRot = rotations.getLeft();
+//			this.lerpHeadSteps = 3;
+//		}
 	}
 
-	private double getGravity() {
+	 public double getDefaultGravity() {
 		if(this.isNoGravity()) {
 			return 0;
 		}
@@ -1027,8 +1003,7 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 
 		if(detachedX || detachedY || detachedZ) {
 			float stepHeight = this.maxUpStep();
-			this.setMaxUpStep(0);
-
+			this.getAttribute(Attributes.STEP_HEIGHT).setBaseValue(0);
 			boolean prevOnGround = this.onGround();
 			boolean prevCollidedHorizontally = this.horizontalCollision;
 			boolean prevCollidedVertically = this.verticalCollision;
@@ -1058,7 +1033,7 @@ public abstract class ClimberEntityMixin extends PathfinderMob implements IClimb
 				this.move(MoverType.SELF, attachVector.scale(attachDst));
 			}
 
-			this.setMaxUpStep(stepHeight);
+			this.getAttribute(Attributes.STEP_HEIGHT).setBaseValue(stepHeight);
 
 			//Attaching failed, fall back to previous position
 			if(!this.onGround()) {

@@ -59,4 +59,12 @@ public interface IClimberEntity extends IAdvancedPathFindingEntity {
 	public void setCollisionsSmoothingRange(float range);
 	
 	public void setJumpDirection(@Nullable Vec3 dir);
+
+	void setLerpYRot(Float left);
+
+	void setLerpXRot(Float right);
+
+	void setLerpYHeadRot(Float left);
+
+	void setLerpHeadSteps(int i);
 }

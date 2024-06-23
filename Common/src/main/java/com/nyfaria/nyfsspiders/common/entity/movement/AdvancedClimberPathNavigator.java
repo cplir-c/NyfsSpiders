@@ -13,10 +13,11 @@ import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.pathfinder.PathfindingContext;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -165,7 +166,7 @@ public class AdvancedClimberPathNavigator<T extends Mob & IClimberEntity> extend
                 boolean isWaypointInReach = dx < this.maxDistanceToWaypoint && dy < maxDistanceToWaypointY && dz < this.maxDistanceToWaypoint;
 
                 boolean isOnSameSideAsTarget = false;
-                if (this.canFloat() && (currentTarget.type == BlockPathTypes.WATER || currentTarget.type == BlockPathTypes.WATER_BORDER || currentTarget.type == BlockPathTypes.LAVA)) {
+                if (this.canFloat() && (currentTarget.type == PathType.WATER || currentTarget.type == PathType.WATER_BORDER || currentTarget.type == PathType.LAVA)) {
                     isOnSameSideAsTarget = true;
                 } else if (currentTarget instanceof DirectionalPathPoint) {
                     Direction targetSide = ((DirectionalPathPoint) currentTarget).getPathSide();
@@ -421,34 +422,33 @@ public class AdvancedClimberPathNavigator<T extends Mob & IClimberEntity> extend
                     double offsetZ = (double) obz + 0.5D - swizzle(start, az);
 
                     if (offsetX * dx + offsetZ * dz >= minDotProduct) {
-                        BlockPathTypes nodeTypeBelow = this.nodeEvaluator.getBlockPathType(
-                                this.level,
-                                unswizzle(obx, by + (invertY ? 1 : -1), obz, ax, ay, az, Direction.Axis.X), unswizzle(obx, by + (invertY ? 1 : -1), obz, ax, ay, az, Direction.Axis.Y), unswizzle(obx, by + (invertY ? 1 : -1), obz, ax, ay, az, Direction.Axis.Z),
-                                this.mob);
+                        PathType nodeTypeBelow = this.nodeEvaluator.getPathType(
+                                new PathfindingContext(this.level,this.mob),
+                                unswizzle(obx, by + (invertY ? 1 : -1), obz, ax, ay, az, Direction.Axis.X), unswizzle(obx, by + (invertY ? 1 : -1), obz, ax, ay, az, Direction.Axis.Y), unswizzle(obx, by + (invertY ? 1 : -1), obz, ax, ay, az, Direction.Axis.Z));
 
-                        if (nodeTypeBelow == BlockPathTypes.WATER) {
+                        if (nodeTypeBelow == PathType.WATER) {
                             return false;
                         }
 
-                        if (nodeTypeBelow == BlockPathTypes.LAVA) {
+                        if (nodeTypeBelow == PathType.LAVA) {
                             return false;
                         }
 
-                        if (nodeTypeBelow == BlockPathTypes.OPEN) {
+                        if (nodeTypeBelow == PathType.OPEN) {
                             return false;
                         }
 
-                        BlockPathTypes nodeType = this.nodeEvaluator.getBlockPathType(
-                                this.level,
-                                unswizzle(obx, by, obz, ax, ay, az, Direction.Axis.X), unswizzle(obx, by, obz, ax, ay, az, Direction.Axis.Y), unswizzle(obx, by, obz, ax, ay, az, Direction.Axis.Z),
-                                this.mob);
+                        PathType nodeType = this.nodeEvaluator.getPathType(
+                                new PathfindingContext(this.level,this.mob),
+                                unswizzle(obx, by, obz, ax, ay, az, Direction.Axis.X), unswizzle(obx, by, obz, ax, ay, az, Direction.Axis.Y), unswizzle(obx, by, obz, ax, ay, az, Direction.Axis.Z)
+                        );
                         float f = this.mob.getPathfindingMalus(nodeType);
 
                         if (f < 0.0F || f >= 8.0F) {
                             return false;
                         }
 
-                        if (nodeType == BlockPathTypes.DAMAGE_FIRE || nodeType == BlockPathTypes.DANGER_FIRE || nodeType == BlockPathTypes.DAMAGE_OTHER) {
+                        if (nodeType == PathType.DAMAGE_FIRE || nodeType == PathType.DANGER_FIRE || nodeType == PathType.DAMAGE_OTHER) {
                             return false;
                         }
                     }
@@ -468,7 +468,7 @@ public class AdvancedClimberPathNavigator<T extends Mob & IClimberEntity> extend
             if (offsetX * dx + pffsetZ * dz >= minDotProduct) {
                 BlockState state = this.level.getBlockState(pos);
 
-                if (!state.isPathfindable(this.level, pos, PathComputationType.LAND)) {
+                if (!state.isPathfindable(PathComputationType.LAND)) {
                     return false;
                 }
             }

@@ -1,3 +1,6 @@
+## 2.3.0
+- Updated to 1.21
+
 ## Version 2.2.0
 - Updated to 1.20.4
 
