@@ -1,6 +1,6 @@
 plugins {
     id 'multiloader-loader'
-    id 'net.neoforged.moddev' version '0.1.107'
+    id 'net.neoforged.moddev' version '0.1.108'
     id "me.modmuss50.mod-publish-plugin" version "0.5.1"
 }
 
@@ -14,7 +14,7 @@ neoForge {
     version = "${neoforge_version}"
     def at = file('src/main/resources/META-INF/accesstransformer.cfg')
     if (at.exists()) {
-        accessTransformers = ["src/main/resources/META-INF/accesstransformer.cfg"]
+        accessTransformers = [at.getAbsolutePath()]
     }
     runs {
         configureEach {
@@ -31,7 +31,7 @@ neoForge {
         }
         data {
             data()
-//            programArguments.addAll '--mod', project.mod_id, '--all', '--output', project(":common").file('src/generated/resources/').getAbsolutePath(), '--existing', project(":common").file('src/main/resources/').getAbsolutePath()
+//            programArguments = ['--mod', project.mod_id, '--all', '--output', project(":common").file('src/generated/resources/').getAbsolutePath(), '--existing', project(":common").file('src/main/resources/').getAbsolutePath()]
         }
     }
     mods {
@@ -44,7 +44,7 @@ neoForge {
 sourceSets.main.resources { srcDir project(":common").file('src/generated/resources').getAbsolutePath() }
 
 dependencies {
-    implementation "mysticdrew:common-networking-neoforge:${common_network_version}-${minecraft_version}"
+    implementation jarJar("mysticdrew:common-networking-neoforge:${common_network_version}-${minecraft_version}")
 }
 
 publishMods {
@@ -77,6 +77,6 @@ publishMods {
         webhookUrl = spider_news
         username = "Spider News"
         avatarUrl = "https://media.forgecdn.net/avatars/618/872/638005062440412823.png"
-        content = changelog.map { "# Nyf's Spiders ${version} has been released for Minecraft ${minecraft_version}! \n (Pending Approval of Course)" + it}
+        content = changelog.map { "# Nyf's Spiders ${project.version} has been released for Minecraft ${minecraft_version}! \n (Pending Approval of Course)\n" + it}
     }
 }

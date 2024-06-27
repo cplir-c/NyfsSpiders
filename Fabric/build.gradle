@@ -10,7 +10,7 @@ dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered() {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-1.20.6:2024.05.01@zip")
+        parchment("org.parchmentmc.data:parchment-1.21:2024.06.23@zip")
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
@@ -59,7 +59,10 @@ publishMods {
             minecraftVersions.add(minecraft_version)
             clientRequired = true
             serverRequired = true
-            javaVersions.add(JavaVersion.VERSION_17)
+            javaVersions.add(JavaVersion.VERSION_21)
+            requires {
+                slug = "fabric-api"
+            }
         }
     }
     if (modrinth_publishing_enabled.toBoolean()) {
@@ -67,6 +70,9 @@ publishMods {
             accessToken = modrinth_token
             projectId = modrinth_project_id
             minecraftVersions.add(minecraft_version)
+            requires {
+                slug = "fabric-api"
+            }
         }
     }
 }
