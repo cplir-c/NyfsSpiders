@@ -99,7 +99,7 @@ public class SpiderData {
 
     public void setMovementTargetX(float movementTargetX) {
         this.movementTargetX = movementTargetX;
-        if (spider.getServer() != null) {
+        if (spider != null && spider.getServer() != null) {
             Services.PLATFORM.setSpiderData(spider, this);
             Network.getNetworkHandler().sendToAllClients(new UpdateRotationBody(spider.getId(), rotationBody), spider.getServer());
         }
@@ -111,7 +111,7 @@ public class SpiderData {
 
     public void setMovementTargetY(float movementTargetY) {
         this.movementTargetY = movementTargetY;
-        if (spider.getServer() != null) {
+        if (spider != null && spider.getServer() != null) {
             Services.PLATFORM.setSpiderData(spider, this);
             Network.getNetworkHandler().sendToAllClients(new UpdateMovementTargetY(spider.getId(),movementTargetY), spider.getServer());
         }
@@ -123,10 +123,9 @@ public class SpiderData {
 
     public void setMovementTargetZ(float movementTargetZ) {
         this.movementTargetZ = movementTargetZ;
-        if(spider.getServer()!=null){
+        if(spider != null && spider.getServer() != null){
             Services.PLATFORM.setSpiderData(spider,this);
             Network.getNetworkHandler().sendToAllClients(new UpdateMovementTargetZ(spider.getId(),movementTargetZ), spider.getServer());
-
         }
     }
 
@@ -136,7 +135,7 @@ public class SpiderData {
 
     public void setRotationBody(Vector3f rotationBody) {
         this.rotationBody = rotationBody;
-        if(spider.getServer()!=null){
+        if(spider != null && spider.getServer() != null){
             Services.PLATFORM.setSpiderData(spider,this);
             Network.getNetworkHandler().sendToAllClients(new UpdateRotationBody(spider.getId(), rotationBody), spider.getServer());
         }
@@ -148,7 +147,7 @@ public class SpiderData {
 
     public void setRotationHead(Vector3f rotationHead) {
         this.rotationHead = rotationHead;
-        if (spider.getServer() != null) {
+        if (spider != null && spider.getServer() != null) {
             Services.PLATFORM.setSpiderData(spider, this);
             Network.getNetworkHandler().sendToAllClients(new UpdateRotationHead(spider.getId(), rotationHead), spider.getServer());
         }
@@ -160,7 +159,6 @@ public class SpiderData {
 
     public void setPathingSides(List<Direction> pathingSides) {
         this.pathingSides = pathingSides;
-
     }
 
     public List<Optional<BlockPos>> getPathingTargets() {
@@ -172,14 +170,14 @@ public class SpiderData {
     }
     public void setPathingTarget(int index, BlockPos pos) {
         this.pathingTargets.set(index, Optional.ofNullable(pos));
-        if (spider.getServer() != null) {
+        if (spider != null && spider.getServer() != null) {
             Services.PLATFORM.setSpiderData(spider, this);
             Network.getNetworkHandler().sendToAllClients(new UpdatePathingTarget(spider.getId(),index ,pos), spider.getServer());
         }
     }
     public void setPathingSide(int index, Direction side) {
         this.pathingSides.set(index, side);
-        if (spider.getServer() != null) {
+        if (spider != null && spider.getServer() != null) {
             Services.PLATFORM.setSpiderData(spider, this);
             Network.getNetworkHandler().sendToAllClients(new UpdatePathingSide(spider.getId(),index ,side), spider.getServer());
         }
